@@ -20,6 +20,7 @@ namespace LoLPasswordManager
         private byte[] entropy = BitConverter.GetBytes(8463123);
         private bool editmode = false;
         private List<Account> accounts;
+        private bool loaded = true;
 
         public mainForm()
         {
@@ -31,51 +32,83 @@ namespace LoLPasswordManager
         }
 
         private void LoadAccounts() {
-            accounts.Clear();
-            if (!File.Exists(Settings.Default.FilePath))
-                return;
-
-            using (MemoryStream ms = new MemoryStream(ProtectedData.Unprotect(File.ReadAllBytes(Settings.Default.FilePath), entropy, DataProtectionScope.CurrentUser)))
-            using (BinaryReader br = new BinaryReader(ms, Encoding.UTF8, true))
+            try
             {
-                if (br.ReadInt32() != 123)
-                    throw new Exception("Cannot read data");
-                while (br.PeekChar() != -1)
+                accounts.Clear();
+                if (!File.Exists(Settings.Default.FilePath))
+                    return;
+
+                byte[] data = File.ReadAllBytes(Settings.Default.FilePath);
+                try{
+                    if(Settings.Default.UseEncryption)
+                        data = ProtectedData.Unprotect(data, entropy, DataProtectionScope.CurrentUser);
+                } catch(CryptographicException e)
                 {
-                    if (br.ReadChar() != '{')
-                        throw new Exception("Cannot read data");
-                    accounts.Add(new Account()
-                    {
-                        Name = br.ReadString(),
-                        Username = br.ReadString(),
-                        Password = br.ReadString(),
-                        AdditionalInformation = br.ReadString()
-                    });
-                    if (br.ReadChar() != '}')
-                        throw new Exception("Cannot read data");
+                    MessageBox.Show("Can't decrypt file. Trying to open unencryped!\nError: " + e.Message);
                 }
-                
+
+                using (MemoryStream ms = new MemoryStream(data))
+                using (BinaryReader br = new BinaryReader(ms, Encoding.UTF8, true))
+                {
+                    if (br.ReadInt32() != 123)
+                        throw new Exception("Cannot read data");
+                    while (br.PeekChar() != -1)
+                    {
+                        if (br.ReadChar() != '{')
+                            throw new Exception("Cannot read data");
+                        accounts.Add(new Account()
+                        {
+                            Name = br.ReadString(),
+                            Username = br.ReadString(),
+                            Password = br.ReadString(),
+                            AdditionalInformation = br.ReadString()
+                        });
+                        if (br.ReadChar() != '}')
+                            throw new Exception("Cannot read data");
+                    }
+                    
+                }
+            }
+            catch (Exception e)
+            {
+                loaded = false;
+                MessageBox.Show("Reading the accounts was unsuccessful.\nAutomatic saving disabled.\nError: " + e.Message);
             }
         }
 
         private void SaveAccounts()
         {
-            using (MemoryStream ms = new MemoryStream())
+            try
             {
-                using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8, true))
+                if (!loaded && MessageBox.Show("The account file wasn't loaded correctly.\nDo you still want to override it?",
+                                     "Confirm Override",
+                                     MessageBoxButtons.YesNo) == DialogResult.No)
+                    return;
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    bw.Write(123);
-                    foreach (Account acc in accounts)
+                    using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8, true))
                     {
-                        bw.Write('{');
-                        bw.Write(acc.Name);
-                        bw.Write(acc.Username);
-                        bw.Write(acc.Password);
-                        bw.Write(acc.AdditionalInformation);
-                        bw.Write('}');
+                        bw.Write(123);
+                        foreach (Account acc in accounts)
+                        {
+                            bw.Write('{');
+                            bw.Write(acc.Name);
+                            bw.Write(acc.Username);
+                            bw.Write(acc.Password);
+                            bw.Write(acc.AdditionalInformation);
+                            bw.Write('}');
+                        }
                     }
+                    byte[] data = ms.ToArray();
+                    if (Settings.Default.UseEncryption)
+                        data = ProtectedData.Protect(ms.ToArray(), entropy, DataProtectionScope.CurrentUser);
+
+                    File.WriteAllBytes(Settings.Default.FilePath, data);
+                    loaded = true;
                 }
-                File.WriteAllBytes(Settings.Default.FilePath, ProtectedData.Protect(ms.ToArray(), entropy, DataProtectionScope.CurrentUser));
+            }catch(Exception e)
+            {
+                MessageBox.Show("Saving the accounts was unsuccessful.\nError: " + e.Message);
             }
         }
 
@@ -287,12 +320,19 @@ namespace LoLPasswordManager
                 Left = 12,
                 Top = 12
             };
+            CheckBox uen = new CheckBox()
+            {
+                Text = "Use Encryption?",
+                Checked = Settings.Default.UseEncryption,
+                Left = 12,
+                Top = 35
+            };
             LinkLabel credits = new LinkLabel()
             {
                 Text = "Icons made by Smashicons, Freepik and Prosymbols",
                 Links = { { 14, 10, "https://smashicons.com/" }, { 26, 7, "https://www.flaticon.com/de/autoren/freepik" }, { 38, 10, "https://www.flaticon.com/de/autoren/prosymbols" } },
                 Left = 12,
-                Top = 52,
+                Top = 62,
                 Width = 300
             };
             credits.LinkClicked += (send, args) =>
@@ -300,9 +340,15 @@ namespace LoLPasswordManager
                 System.Diagnostics.Process.Start(args.Link.LinkData as string);
             };
             prompt.Controls.Add(qal);
+            prompt.Controls.Add(uen);
             prompt.Controls.Add(credits) ;
             prompt.ShowDialog();
             Settings.Default.CloseAfterLogin = qal.Checked;
+            if (Settings.Default.UseEncryption != uen.Checked) {
+                Settings.Default.UseEncryption = uen.Checked;
+                SaveAccounts();
+                LoadAccounts();
+            }
             Settings.Default.Save();
         }
 

@@ -46,5 +46,17 @@ namespace LoLPasswordManager {
                 this["FilePath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UseEncryption {
+            get {
+                return ((bool)(this["UseEncryption"]));
+            }
+            set {
+                this["UseEncryption"] = value;
+            }
+        }
     }
 }
