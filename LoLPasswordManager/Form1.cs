@@ -327,20 +327,52 @@ namespace LoLPasswordManager
                 Left = 12,
                 Top = 35
             };
+            Button exp = new Button()
+            {
+                Text = "Export Accounts",
+                Left = 12,
+                Top = 62,
+                Width = 100
+            };
             LinkLabel credits = new LinkLabel()
             {
                 Text = "Icons made by Smashicons, Freepik and Prosymbols",
                 Links = { { 14, 10, "https://smashicons.com/" }, { 26, 7, "https://www.flaticon.com/de/autoren/freepik" }, { 38, 10, "https://www.flaticon.com/de/autoren/prosymbols" } },
                 Left = 12,
-                Top = 62,
+                Top = 92,
                 Width = 300
             };
             credits.LinkClicked += (send, args) =>
             {
                 System.Diagnostics.Process.Start(args.Link.LinkData as string);
             };
+            exp.Click += (o, args) =>
+            {
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+ 
+                saveFileDialog1.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*"  ;
+                saveFileDialog1.FilterIndex = 0 ;
+                saveFileDialog1.RestoreDirectory = true ;
+ 
+                if(saveFileDialog1.ShowDialog() == DialogResult.OK)
+                {
+                    using (StreamWriter wr = new StreamWriter(saveFileDialog1.OpenFile()))
+                    {
+                        foreach (var account in accounts)
+                        {
+                            wr.WriteLine("Name: {0}", account.Name);
+                            wr.WriteLine("Username: {0}", account.Username);
+                            wr.WriteLine("Password: {0}", account.Password);
+                            wr.WriteLine("Notes:");
+                            wr.WriteLine(account.AdditionalInformation);
+                            wr.WriteLine();
+                        }
+                    }
+                }
+            };
             prompt.Controls.Add(qal);
             prompt.Controls.Add(uen);
+            prompt.Controls.Add(exp);
             prompt.Controls.Add(credits) ;
             prompt.ShowDialog();
             Settings.Default.CloseAfterLogin = qal.Checked;
@@ -362,6 +394,9 @@ namespace LoLPasswordManager
                     break;
                 case LoginHelper.LoginResult.NoClient:
                     MessageBox.Show("Can't find the Riot Client!\nMake sure that the Client is running!");
+                    break;
+                case LoginHelper.LoginResult.NotVisible:
+                    MessageBox.Show("Can't find the Riot Client!\nMake sure that the Client is not minimized!");
                     break;
                 case LoginHelper.LoginResult.Success:
                     if (Settings.Default.CloseAfterLogin)
