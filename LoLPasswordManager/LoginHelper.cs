@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
+using MessageBox = System.Windows.MessageBox;
 
 namespace LoLPasswordManager
 {
@@ -11,54 +16,77 @@ namespace LoLPasswordManager
         {
             Success,
             NoClient,
+            NotVisible,
             Error
         }
 
         public static LoginResult LogIn(Account acc)
         {
+            
             IntPtr window = FindWindow(null, "Riot Client");
             if (window == IntPtr.Zero)
                 return LoginResult.NoClient;
-
-            ShowWindow(window, 9);
-            BringWindowToTop(window);
-
-            System.Threading.Thread.Sleep(100);
+            
+            //ShowWindow(window, 9);
+            //SetForegroundWindow(window);
 
             RECT rct;
 
-            if (!GetWindowRect(window, out rct))
-            {
+            if (!BringWindowToTop(window) || !GetWindowRect(window, out rct))
                 return LoginResult.Error;
-            }
 
+            if (!IsWindowVisible(window))
+                return LoginResult.NotVisible;
+
+            System.Threading.Thread.Sleep(100);
+
+            //MessageBox.Show(rct.Left + " - " + rct.Right + "\n" + rct.Top + " - " + rct.Bottom + "\n" + (rct.Right - rct.Left) + "," + (rct.Bottom - rct.Top));
+
+            int sx = 65536 / GetSystemMetrics(0);
+            int sy = 65536 / GetSystemMetrics(1);
+            
             List<INPUT> inputs = new List<INPUT>();
 
-            SetCursorPos(mix(rct.Left, rct.Right, 0.5f), mix(rct.Top, rct.Bottom, 0.5f));
+            //SetCursorPos(mix(rct.Left, rct.Right, 0.5f), mix(rct.Top, rct.Bottom, 0.5f));
 
             int t = 0;
 
-            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN | MOUSEEVENTF.LEFTUP, t += 10));
+            inputs.Add(GetMouseEvent(
+                sx * mix(rct.Left, rct.Right, 0.16f), 
+                sy * mix(rct.Top, rct.Bottom, 0.35f), 
+                MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
+            
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTUP, t += 10));
 
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
 
 
             inputs.Add(GetKeyboardEvent(ScanCodeShort.LCONTROL, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.KEY_A, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.KEY_A, false, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.LCONTROL, false, t += 10));
-
+//
             foreach (char c in acc.Username)
             {
                 inputs.Add(GetKeyboardEvent(c, true, t += 10));
                 inputs.Add(GetKeyboardEvent(c, false, t += 10));
             }
 
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+//
+
+            inputs.Add(GetMouseEvent(
+                sx * mix(rct.Left, rct.Right, 0.16f), 
+                sy * mix(rct.Top, rct.Bottom, 0.43f), 
+                MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
+            
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTUP, t += 10));
 
             inputs.Add(GetKeyboardEvent(ScanCodeShort.LCONTROL, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.KEY_A, true, t += 10));
@@ -71,13 +99,21 @@ namespace LoLPasswordManager
                 inputs.Add(GetKeyboardEvent(c, false, t += 10));
             }
 
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+            inputs.Add(GetMouseEvent(
+                sx * mix(rct.Left, rct.Right, 0.16f), 
+                sy * mix(rct.Top, rct.Bottom, 0.7f), 
+                MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
+            
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
+            inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTUP, t += 10));
+            
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
+            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
 
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.RETURN, true, t += 10));
-            inputs.Add(GetKeyboardEvent(ScanCodeShort.RETURN, false, t += 10));
+            inputs.Add(GetKeyboardEvent(ScanCodeShort.SHIFT, true, t += 10));
+            inputs.Add(GetKeyboardEvent(ScanCodeShort.SHIFT, false, t += 10));
 
             uint i = SendInput((uint)inputs.Count, inputs.ToArray(), INPUT.Size);
 
@@ -147,6 +183,9 @@ namespace LoLPasswordManager
             };
         }
 
+        [DllImport("user32.dll")]
+        static extern int GetSystemMetrics(int smIndex);
+        
         [DllImport("user32.dll")]
         static extern bool SetCursorPos(int x, int y);
 
