@@ -101,7 +101,7 @@ namespace LoLPasswordManager
 
             inputs.Add(GetMouseEvent(
                 sx * mix(rct.Left, rct.Right, 0.16f), 
-                sy * mix(rct.Top, rct.Bottom, 0.7f), 
+                sy * mix(rct.Top, rct.Bottom, 0.76f), 
                 MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
             
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
