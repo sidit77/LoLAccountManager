@@ -49,13 +49,24 @@ namespace LoLPasswordManager {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool UseEncryption {
+        public byte[] Password {
             get {
-                return ((bool)(this["UseEncryption"]));
+                return ((byte[])(this["Password"]));
             }
             set {
-                this["UseEncryption"] = value;
+                this["Password"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool FirstStart {
+            get {
+                return ((bool)(this["FirstStart"]));
+            }
+            set {
+                this["FirstStart"] = value;
             }
         }
     }

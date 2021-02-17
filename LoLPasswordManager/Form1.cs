@@ -5,18 +5,15 @@ using LoLPasswordManager.Properties;
 using System.Security;
 using System.Security.Cryptography;
 using System.IO;
-using System.Text;
 using System.Drawing;
 using System.Linq;
-using System.Windows.Media.TextFormatting;
 using ICSharpCode.SharpZipLib.Zip;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace LoLPasswordManager
 {
-
-    
 
     public partial class mainForm : Form
     {
@@ -24,7 +21,6 @@ namespace LoLPasswordManager
         private bool editmode = false;
         private List<Account> accounts;
         private bool loaded = true;
-        private string password = "hunter3";
 
         public mainForm()
         {
@@ -35,34 +31,18 @@ namespace LoLPasswordManager
             SetAccountButtons();
         }
 
-        public static byte[] GenerateRandomSalt()
-        {
-            byte[] data = new byte[32];
-
-            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    rng.GetBytes(data);
-                }
-            }
-
-            return data;
-        }
-
         private void LoadAccounts() {
             try
             {
                 accounts.Clear();
-                if (!File.Exists(Settings.Default.FilePath))
-                    return;
 
+                CheckFile();
 
                 using (var fs = File.OpenRead(Settings.Default.FilePath))
                 {
                     using (var zf = new ZipFile(fs))
                     {
-                        zf.Password = password;
+                        zf.Password = Encoding.UTF8.GetString(ProtectedData.Unprotect(Settings.Default.Password, entropy, DataProtectionScope.CurrentUser));
                         using (var zipStream = zf.GetInputStream(zf.GetEntry("accounts.json")))
                         {
                             using (var sr = new StreamReader(zipStream))
@@ -82,38 +62,11 @@ namespace LoLPasswordManager
                         }
                     }
                 }
-
-                /*
-                byte[] data = File.ReadAllBytes(Settings.Default.FilePath);
-                try{
-                    if(Settings.Default.UseEncryption)
-                        data = ProtectedData.Unprotect(data, entropy, DataProtectionScope.CurrentUser);
-                } catch(CryptographicException e)
+                if (Settings.Default.FirstStart)
                 {
-                    MessageBox.Show("Can't decrypt file. Trying to open unencryped!\nError: " + e.Message);
+                    Settings.Default.FirstStart = false;
+                    Settings.Default.Save();
                 }
-
-                using (MemoryStream ms = new MemoryStream(data))
-                using (BinaryReader br = new BinaryReader(ms, Encoding.UTF8, true))
-                {
-                    if (br.ReadInt32() != 123)
-                        throw new Exception("Cannot read data");
-                    while (br.PeekChar() != -1)
-                    {
-                        if (br.ReadChar() != '{')
-                            throw new Exception("Cannot read data");
-                        accounts.Add(new Account()
-                        {
-                            Name = br.ReadString(),
-                            Username = br.ReadString(),
-                            Password = br.ReadString(),
-                            AdditionalInformation = br.ReadString()
-                        });
-                        if (br.ReadChar() != '}')
-                            throw new Exception("Cannot read data");
-                    }
-                    
-                }*/
             }
             catch (Exception e)
             {
@@ -131,12 +84,12 @@ namespace LoLPasswordManager
                                      MessageBoxButtons.YesNo) == DialogResult.No)
                     return;
 
-
-                using (var fs = File.Create(Settings.Default.FilePath))
+                string templocation = Path.GetTempFileName();
+                using (var fs = File.Create(templocation))
                 {
                     using (var outStream = new ZipOutputStream(fs))
                     {
-                        outStream.Password = password;
+                        outStream.Password = Encoding.UTF8.GetString(ProtectedData.Unprotect(Settings.Default.Password, entropy, DataProtectionScope.CurrentUser));
                         outStream.PutNextEntry(new ZipEntry("accounts.json"));
                         using (var sw = new StreamWriter(outStream))
                         {
@@ -182,30 +135,10 @@ namespace LoLPasswordManager
                     }
                 }
                 loaded = true;
+                if (File.Exists(Settings.Default.FilePath))
+                    File.Delete(Settings.Default.FilePath);
+                File.Move(templocation, Settings.Default.FilePath);
 
-                /*
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8, true))
-                    {
-                        bw.Write(123);
-                        foreach (Account acc in accounts)
-                        {
-                            bw.Write('{');
-                            bw.Write(acc.Name);
-                            bw.Write(acc.Username);
-                            bw.Write(acc.Password);
-                            bw.Write(acc.AdditionalInformation);
-                            bw.Write('}');
-                        }
-                    }
-                    byte[] data = ms.ToArray();
-                    if (Settings.Default.UseEncryption)
-                        data = ProtectedData.Protect(ms.ToArray(), entropy, DataProtectionScope.CurrentUser);
-
-                    File.WriteAllBytes(Settings.Default.FilePath, data);
-                    loaded = true;
-                }*/
             }catch(Exception e)
             {
                 MessageBox.Show("Saving the accounts was unsuccessful.\nError: " + e.Message);
@@ -420,12 +353,20 @@ namespace LoLPasswordManager
                 Left = 12,
                 Top = 12
             };
-            CheckBox uen = new CheckBox()
+            Button uen = new Button()
             {
-                Text = "Use Encryption?",
-                Checked = Settings.Default.UseEncryption,
+                Text = "Change Location",
                 Left = 12,
-                Top = 35
+                Top = 35,
+                Width = 100
+            };
+            LinkLabel showpw = new LinkLabel()
+            {
+                Text = "Show Password",
+                Links = { { 0, 13, "https://smashicons.com/" } },
+                Left = 120,
+                Top = 39,
+                Width = 100
             };
             Button exp = new Button()
             {
@@ -445,6 +386,16 @@ namespace LoLPasswordManager
             credits.LinkClicked += (send, args) =>
             {
                 System.Diagnostics.Process.Start(args.Link.LinkData as string);
+            };
+            showpw.LinkClicked += (send, args) =>
+            {
+                MessageBox.Show(Encoding.UTF8.GetString(ProtectedData.Unprotect(Settings.Default.Password, entropy, DataProtectionScope.CurrentUser)));
+            };
+            uen.Click += (o, args) =>
+            {
+                Settings.Default.FirstStart = true;
+                Settings.Default.Save();
+                LoadAccounts();
             };
             exp.Click += (o, args) =>
             {
@@ -470,17 +421,18 @@ namespace LoLPasswordManager
                     }
                 }
             };
+            prompt.Controls.Add(showpw);
             prompt.Controls.Add(qal);
             prompt.Controls.Add(uen);
             prompt.Controls.Add(exp);
             prompt.Controls.Add(credits) ;
             prompt.ShowDialog();
-            Settings.Default.CloseAfterLogin = qal.Checked;
-            if (Settings.Default.UseEncryption != uen.Checked) {
-                Settings.Default.UseEncryption = uen.Checked;
-                SaveAccounts();
-                LoadAccounts();
-            }
+            //Settings.Default.CloseAfterLogin = qal.Checked;
+            //if (Settings.Default.Password != uen.Checked) {
+            //    Settings.Default.Password = uen.Checked;
+            //    SaveAccounts();
+            //    LoadAccounts();
+            //}
             Settings.Default.Save();
         }
 
@@ -504,37 +456,7 @@ namespace LoLPasswordManager
                     break;
             }
 
-            //var client = Process.GetProcesses().Where(p => p.MainWindowTitle.Equals("Riot Client")).ToArray();
-            //if(client.Length == 0)
-            //{
-            //    MessageBox.Show("Can't find the Riot Client!\nMake sure that the Client is running!");
-            //    return;
-            //}
-            //
-            //try
-            //{
-            //    var app = FlaUI.Core.Application.Attach(client[0]);
-            //    using (var automation = new UIA3Automation())
-            //    {
-            //        var window = app.GetMainWindow(automation);
-            //        window.Focus();
-            //        var fields = window.FindAllDescendants(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Edit));
-            //        fields[0].Click();
-            //        Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_A);
-            //        Keyboard.Type(acc.Username);
-            //        fields[1].Click();
-            //        Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_A);
-            //        Keyboard.Type(acc.Password);
-            //        var buttons = window.FindAllDescendants(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button));
-            //        buttons[1].Click();
-            //
-            //    }
-            //    if (Settings.Default.CloseAfterLogin)
-            //        Application.Exit();
-            //} catch (Exception ex)
-            //{
-            //    MessageBox.Show("An Error occured while filling in the data.\nMake sure the Client isn't minimized!");
-            //}
+         
         }
 
         private bool ShowEditDialog(Account acc)
@@ -587,7 +509,131 @@ namespace LoLPasswordManager
 
             return saved;
         }
+
+        private bool ShowPasswordPrompt(bool newuser)
+        {
+            bool success = false;
+
+
+            Form prompt = new Form()
+            {
+                Width = 345,
+                Height = newuser ? 195 : 140,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                Text = "Set Password"
+            };
+
+            Label passwordlabel = new Label { Left = 12, Top = 12, Text = "Password: " };
+            TextBox password = new TextBox { Left = 15, Top = 30, Width = 230, Height = 40, UseSystemPasswordChar = true};
+            Button showpw = new Button { Left = 250, Top = 29, Height = 22, Width = 65, Text = "Show" };
+            showpw.Click += (sender, e) => {
+                password.UseSystemPasswordChar = !password.UseSystemPasswordChar;
+                showpw.Text = password.UseSystemPasswordChar ? "Show" : "Hide";
+            };
+
+            Label passwordlabel2 = new Label { Left = 12, Top = 62, Text = "Confim Password: " };
+            TextBox password2 = new TextBox { Left = 15, Top = 80, Width = 230, Height = 40, UseSystemPasswordChar = true };
+            Button showpw2 = new Button { Left = 250, Top = 79, Height = 22, Width = 65, Text = "Show" };
+            showpw2.Click += (sender, e) => {
+                password2.UseSystemPasswordChar = !password2.UseSystemPasswordChar;
+                showpw2.Text = password2.UseSystemPasswordChar ? "Show" : "Hide";
+            };
+
+            Button save = new Button { Left = 14, Top = newuser ? 115 : 60, Height = 30, Width = 302, Text = "Save" };
+            save.Click += (sender, e) => {
+
+                if(newuser && !password.Text.Equals(password2.Text))
+                {
+                    MessageBox.Show("The passwords do not match!");
+                    return;
+                }
+
+                Settings.Default.Password = ProtectedData.Protect(Encoding.UTF8.GetBytes(password.Text), entropy, DataProtectionScope.CurrentUser);
+                Settings.Default.Save();
+                success = true;
+                prompt.Close();
+            };
+
+            prompt.Controls.Add(save);
+            prompt.Controls.Add(password);
+            prompt.Controls.Add(passwordlabel);
+            prompt.Controls.Add(showpw);
+            if (newuser)
+            {
+                prompt.Controls.Add(password2);
+                prompt.Controls.Add(passwordlabel2);
+                prompt.Controls.Add(showpw2);
+            }
+            prompt.ShowDialog();
+
+            return success;
+        }
+
+        private void CheckFile()
+        {
+
+            if (!File.Exists(Settings.Default.FilePath) || Settings.Default.FirstStart)
+            {
+                switch (MessageBox.Show((Settings.Default.FirstStart ?
+                    "This appears to be the first start of this program." :
+                    "Could not find the previously selected database") +
+                    "\nPress Yes to create a new database or No to select an exisiting one!",
+                                 "Fresh Start",
+                                 MessageBoxButtons.YesNoCancel))
+                {
+                    case DialogResult.Yes:
+
+                        var saveFileDialog1 = new SaveFileDialog
+                        {
+                            Filter = "zip files (*.zip)|*.zip|All files (*.*)|*.*",
+                            DefaultExt = "zip",
+                            InitialDirectory = Settings.Default.FilePath,
+                            FilterIndex = 0,
+                            RestoreDirectory = true
+                        };
+
+                        if (saveFileDialog1.ShowDialog() != DialogResult.OK)
+                            Environment.Exit(0);
+
+                        if (!ShowPasswordPrompt(true))
+                            Environment.Exit(0);
+
+                        Settings.Default.FilePath = saveFileDialog1.FileName;
+                        Settings.Default.Save();
+                        accounts.Clear();
+                        SaveAccounts();
+                        break;
+                    case DialogResult.No:
+
+                        var openFileDialog1 = new OpenFileDialog
+                        {
+                            Filter = "zip files (*.zip)|*.zip|All files (*.*)|*.*",
+                            DefaultExt = "zip",
+                            InitialDirectory = Settings.Default.FilePath,
+                            FilterIndex = 0,
+                            RestoreDirectory = true
+                        };
+
+                        if (openFileDialog1.ShowDialog() != DialogResult.OK)
+                            Environment.Exit(0);
+
+                        if (!ShowPasswordPrompt(false))
+                            Environment.Exit(0);
+
+                        Settings.Default.FilePath = openFileDialog1.FileName;
+                        Settings.Default.Save();
+                        break;
+                    default:
+                        Environment.Exit(0);
+                        break;
+                }
+            }
+
+        }
     }
+
 
     public class Account
     {

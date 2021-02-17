@@ -8,7 +8,10 @@
     <Setting Name="FilePath" Type="System.String" Scope="User">
       <Value Profile="(Default)">accounts.zip</Value>
     </Setting>
-    <Setting Name="UseEncryption" Type="System.Boolean" Scope="User">
+    <Setting Name="Password" Type="System.Byte[]" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="FirstStart" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
