@@ -55,7 +55,7 @@ namespace LoLPasswordManager
                                         Name = acc.Value<String>("name"),
                                         Username = acc.Value<String>("username"),
                                         Password = acc.Value<String>("password"),
-                                        AdditionalInformation = string.Join("\n", acc["notes"].Select(t => t.Value<string>()))
+                                        AdditionalInformation = string.Join(Environment.NewLine, acc["notes"].Select(t => t.Value<string>()))
                                     });
                                 }
                             }
@@ -118,7 +118,7 @@ namespace LoLPasswordManager
                                     writer.WritePropertyName("notes");
                                     writer.WriteStartArray();
 
-                                    foreach(var note in acc.AdditionalInformation.Split('\n'))
+                                    foreach(var note in acc.AdditionalInformation.Replace(Environment.NewLine, "\n").Split('\n').Where(s => s.Length > 0))
                                     {
                                         writer.WriteValue(note);
                                     }
@@ -590,8 +590,7 @@ namespace LoLPasswordManager
                             Filter = "zip files (*.zip)|*.zip|All files (*.*)|*.*",
                             DefaultExt = "zip",
                             InitialDirectory = Settings.Default.FilePath,
-                            FilterIndex = 0,
-                            RestoreDirectory = true
+                            FilterIndex = 0
                         };
 
                         if (saveFileDialog1.ShowDialog() != DialogResult.OK)
@@ -612,8 +611,7 @@ namespace LoLPasswordManager
                             Filter = "zip files (*.zip)|*.zip|All files (*.*)|*.*",
                             DefaultExt = "zip",
                             InitialDirectory = Settings.Default.FilePath,
-                            FilterIndex = 0,
-                            RestoreDirectory = true
+                            FilterIndex = 0
                         };
 
                         if (openFileDialog1.ShowDialog() != DialogResult.OK)
