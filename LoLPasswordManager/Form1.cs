@@ -9,6 +9,7 @@ using System.Text;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Media.TextFormatting;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace LoLPasswordManager
 {
@@ -21,6 +22,7 @@ namespace LoLPasswordManager
         private bool editmode = false;
         private List<Account> accounts;
         private bool loaded = true;
+        private string password = "hunter2";
 
         public mainForm()
         {
@@ -31,6 +33,21 @@ namespace LoLPasswordManager
             SetAccountButtons();
         }
 
+        public static byte[] GenerateRandomSalt()
+        {
+            byte[] data = new byte[32];
+
+            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    rng.GetBytes(data);
+                }
+            }
+
+            return data;
+        }
+
         private void LoadAccounts() {
             try
             {
@@ -38,6 +55,69 @@ namespace LoLPasswordManager
                 if (!File.Exists(Settings.Default.FilePath))
                     return;
 
+
+                //using (var fs = File.OpenRead(Settings.Default.FilePath))
+                //{
+                //    using (var zf = new ZipFile(fs))
+                //    {
+                //        zf.Password = password;
+                //        using (var zipStream = zf.GetInputStream(zf.GetEntry("accounts.json")))
+                //        {
+                //            using (var sr = new StreamReader(zipStream))
+                //            {
+                //                MessageBox.Show(sr.ReadToEnd());
+                //            }
+                //        }
+                //    }
+                //}
+
+                byte[] salt = new byte[32];
+
+                using (var fs = new FileStream(Settings.Default.FilePath, FileMode.Open))
+                {
+                    fs.Read(salt, 0, salt.Length);
+                    var aes = AesManaged.Create();
+                        var key = new Rfc2898DeriveBytes(password, salt, 50000);
+                        aes.KeySize = 256;
+                        aes.BlockSize = 128;
+                        aes.Key = key.GetBytes(aes.KeySize / 8);
+                        aes.IV = key.GetBytes(aes.BlockSize / 8);
+                        aes.Padding = PaddingMode.PKCS7;
+                        aes.Mode = CipherMode.CFB;
+                    
+                        try
+                        {
+                            using (var cs = new CryptoStream(fs, aes.CreateDecryptor(), CryptoStreamMode.Read, true))
+                            {
+                                using (BinaryReader br = new BinaryReader(cs, Encoding.UTF8, true))
+                                {
+                                    if (br.ReadInt32() != 123)
+                                        throw new Exception("Cannot read data");
+                                    while (br.PeekChar() != -1)
+                                    {
+                                        if (br.ReadChar() != '{')
+                                            throw new Exception("Cannot read data");
+                                        accounts.Add(new Account()
+                                        {
+                                            Name = br.ReadString(),
+                                            Username = br.ReadString(),
+                                            Password = br.ReadString(),
+                                            AdditionalInformation = br.ReadString()
+                                        });
+                                        if (br.ReadChar() != '}')
+                                            throw new Exception("Cannot read data");
+                                    }
+
+                                }
+                           }
+                       }
+                       catch (CryptographicException e)
+                       {
+                           MessageBox.Show("Can't decrypt file. Trying to open unencryped!\nError: " + e.Message);
+                       }
+
+                    }
+                /*
                 byte[] data = File.ReadAllBytes(Settings.Default.FilePath);
                 try{
                     if(Settings.Default.UseEncryption)
@@ -67,7 +147,7 @@ namespace LoLPasswordManager
                             throw new Exception("Cannot read data");
                     }
                     
-                }
+                }*/
             }
             catch (Exception e)
             {
@@ -84,6 +164,46 @@ namespace LoLPasswordManager
                                      "Confirm Override",
                                      MessageBoxButtons.YesNo) == DialogResult.No)
                     return;
+
+                
+                byte[] salt = GenerateRandomSalt();
+
+                using(var fs = new FileStream(Settings.Default.FilePath, FileMode.Create))
+                {
+                    var aes = AesManaged.Create();
+                        var key = new Rfc2898DeriveBytes(password, salt, 50000);
+
+                        aes.KeySize = 256;
+                        aes.BlockSize = 128;
+                        aes.Padding = PaddingMode.PKCS7;
+                        aes.Key = key.GetBytes(aes.KeySize / 8);
+                        aes.IV = key.GetBytes(aes.BlockSize / 8);
+                        aes.Mode = CipherMode.CFB;
+                    
+                        fs.Write(salt, 0, salt.Length);
+                        using (var cs = new CryptoStream(fs, aes.CreateEncryptor(), CryptoStreamMode.Write, true))
+                        {
+                            using (BinaryWriter bw = new BinaryWriter(cs, Encoding.UTF8, true))
+                            {
+                                bw.Write(123);
+                                foreach (Account acc in accounts)
+                                {
+                                    bw.Write('{');
+                                    bw.Write(acc.Name);
+                                    bw.Write(acc.Username);
+                                    bw.Write(acc.Password);
+                                    bw.Write(acc.AdditionalInformation);
+                                    bw.Write('}');
+                                }
+                            }
+                            cs.FlushFinalBlock();
+                        }
+
+                    
+                }
+                loaded = true;
+
+                /*
                 using (MemoryStream ms = new MemoryStream())
                 {
                     using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8, true))
@@ -105,7 +225,7 @@ namespace LoLPasswordManager
 
                     File.WriteAllBytes(Settings.Default.FilePath, data);
                     loaded = true;
-                }
+                }*/
             }catch(Exception e)
             {
                 MessageBox.Show("Saving the accounts was unsuccessful.\nError: " + e.Message);
