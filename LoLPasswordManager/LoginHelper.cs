@@ -52,37 +52,27 @@ namespace LoLPasswordManager
             int t = 0;
 
             inputs.Add(GetMouseEvent(
-                sx * mix(rct.Left, rct.Right, 0.16f), 
-                sy * mix(rct.Top, rct.Bottom, 0.35f), 
+                sx * mix(rct.Left, rct.Right, 0.13f), 
+                sy * mix(rct.Top, rct.Bottom, 0.29f), 
                 MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
             
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTUP, t += 10));
 
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-
-
             inputs.Add(GetKeyboardEvent(ScanCodeShort.LCONTROL, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.KEY_A, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.KEY_A, false, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.LCONTROL, false, t += 10));
-//
+
             foreach (char c in acc.Username)
             {
                 inputs.Add(GetKeyboardEvent(c, true, t += 10));
                 inputs.Add(GetKeyboardEvent(c, false, t += 10));
             }
 
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-//
-
             inputs.Add(GetMouseEvent(
-                sx * mix(rct.Left, rct.Right, 0.16f), 
-                sy * mix(rct.Top, rct.Bottom, 0.43f), 
+                sx * mix(rct.Left, rct.Right, 0.13f), 
+                sy * mix(rct.Top, rct.Bottom, 0.36f), 
                 MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
             
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
@@ -100,17 +90,12 @@ namespace LoLPasswordManager
             }
 
             inputs.Add(GetMouseEvent(
-                sx * mix(rct.Left, rct.Right, 0.16f), 
-                sy * mix(rct.Top, rct.Bottom, 0.76f), 
+                sx * mix(rct.Left, rct.Right, 0.13f), 
+                sy * mix(rct.Top, rct.Bottom, 0.64f), 
                 MOUSEEVENTF.ABSOLUTE | MOUSEEVENTF.MOVE, t+=10));
             
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTDOWN, t += 10));
             inputs.Add(GetMouseEvent(0,0, MOUSEEVENTF.LEFTUP, t += 10));
-            
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, true, t += 10));
-            //inputs.Add(GetKeyboardEvent(ScanCodeShort.TAB, false, t += 10));
 
             inputs.Add(GetKeyboardEvent(ScanCodeShort.SHIFT, true, t += 10));
             inputs.Add(GetKeyboardEvent(ScanCodeShort.SHIFT, false, t += 10));
