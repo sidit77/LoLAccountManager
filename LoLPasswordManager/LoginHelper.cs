@@ -23,7 +23,7 @@ namespace LoLPasswordManager
         public static LoginResult LogIn(Account acc)
         {
             
-            IntPtr window = FindWindow(null, "Riot Client");
+            IntPtr window = FindWindow(null, "Riot Client Main");
             if (window == IntPtr.Zero)
                 return LoginResult.NoClient;
             
