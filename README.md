@@ -12,3 +12,21 @@ The usernames and passwords are stored in a encrypted zip file. The password for
 ## Download
 
 [Github release page](https://github.com/sidit77/LoLAccountManager/releases)
+
+## Building from source
+
+Download the .NET 5 SDK
+  * [Download](https://dotnet.microsoft.com/download)
+
+Clone the repository:
+````powershell
+git clone https://github.com/sidit77/LoLAccountManager.git
+cd LoLAccountManager
+````
+
+Compile:
+````powershell
+dotnet publish -r win-x64 --configuration Release --output ./publish/ /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+````
+
+The finished binaries are located in `.\publish\`
