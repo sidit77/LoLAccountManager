@@ -348,10 +348,11 @@ namespace LoLPasswordManager
             };
             CheckBox qal = new CheckBox()
             {
-                Text = "Quit after Login? ",
+                Text = "Quit after Login?",
                 Checked = Settings.Default.CloseAfterLogin,
                 Left = 12,
-                Top = 12
+                Top = 12,
+                Width = 300
             };
             Button uen = new Button()
             {
@@ -427,7 +428,7 @@ namespace LoLPasswordManager
             prompt.Controls.Add(exp);
             prompt.Controls.Add(credits) ;
             prompt.ShowDialog();
-            //Settings.Default.CloseAfterLogin = qal.Checked;
+            Settings.Default.CloseAfterLogin = qal.Checked;
             //if (Settings.Default.Password != uen.Checked) {
             //    Settings.Default.Password = uen.Checked;
             //    SaveAccounts();
