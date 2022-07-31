@@ -371,10 +371,17 @@ namespace LoLPasswordManager
             };
             Button exp = new Button()
             {
-                Text = "Export Accounts",
+                Text = "Export as Text",
                 Left = 12,
                 Top = 62,
-                Width = 100
+                Width = 130
+            };
+            Button exp2 = new Button()
+            {
+                Text = "Export as YAML",
+                Left = 154,
+                Top = 62,
+                Width = 130
             };
             LinkLabel credits = new LinkLabel()
             {
@@ -422,10 +429,36 @@ namespace LoLPasswordManager
                     }
                 }
             };
+            exp2.Click += (o, args) =>
+            {
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+ 
+                saveFileDialog1.Filter = "yml files (*.yml)|*.yml|All files (*.*)|*.*"  ;
+                saveFileDialog1.FilterIndex = 0 ;
+                saveFileDialog1.RestoreDirectory = true ;
+ 
+                if(saveFileDialog1.ShowDialog() == DialogResult.OK)
+                {
+                    using (StreamWriter wr = new StreamWriter(saveFileDialog1.OpenFile()))
+                    {
+                        wr.WriteLine("---");
+                        foreach (var account in accounts)
+                        {
+                            wr.WriteLine("- name: {0}", account.Name);
+                            wr.WriteLine("  username: {0}", account.Username);
+                            wr.WriteLine("  password: {0}", account.Password);
+                            wr.WriteLine("  notes:");
+                            foreach (var note in account.AdditionalInformation.Trim().Split('\n'))
+                                wr.WriteLine("    - {0}", note.Trim());
+                        }
+                    }
+                }
+            };
             prompt.Controls.Add(showpw);
             prompt.Controls.Add(qal);
             prompt.Controls.Add(uen);
             prompt.Controls.Add(exp);
+            prompt.Controls.Add(exp2);
             prompt.Controls.Add(credits) ;
             prompt.ShowDialog();
             Settings.Default.CloseAfterLogin = qal.Checked;
