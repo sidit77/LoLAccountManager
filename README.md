@@ -1,6 +1,10 @@
 # LoL Account Manager
 I got tired of having a `lolaccounts.txt` on my Desktop and manually copy and pasting passwords.
 
+## Deprecated
+I've rewritten a [version 2](https://github.com/sidit77/LoLAccountManager2) of this, so this version is kinda abandoned.
+To migrate export the current database as YAML and simply import it in the new app.
+
 ## Demo
 
 ![](https://thumbs.gfycat.com/SkeletalRespectfulCavy-size_restricted.gif)
